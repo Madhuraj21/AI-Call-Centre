@@ -21,9 +21,15 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 # Configure CORS to allow requests from the Next.js frontend
 CORS(app, resources={
-    r"/api/*": {"origins": ["http://localhost:3000"]},
-    r"/token": {"origins": ["http://localhost:3000"]},
-    r"/request_call": {"origins": ["http://localhost:3000"]}
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",
+            "https://ai-call-centre-jfa2fo5ek-madmaxs-projects-0d745f0d.vercel.app",
+            "https://ai-call-centre.vercel.app"  # Add your main Vercel domain if different
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
 })
 # Replace with a real secret key in production!
 app.secret_key = os.environ.get('SECRET_KEY', 'a_very_secret_key_for_dev')

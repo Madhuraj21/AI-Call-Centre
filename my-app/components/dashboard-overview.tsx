@@ -9,6 +9,8 @@ import { useEffect, useState } from "react"
 import React from "react";
 import { LucideProps } from 'lucide-react';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
 // Define types for data
 type KpiData = {
   title: string;
@@ -87,7 +89,7 @@ export default function DashboardOverview() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const response = await fetch('/api/metrics');
+        const response = await fetch(`${BACKEND_URL}/api/metrics`);
         if (!response.ok) {
           throw new Error('Failed to fetch metrics');
         }

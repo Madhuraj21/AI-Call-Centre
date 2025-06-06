@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
 // Define CallLog type based on backend response
 interface CallLog {
   id: number;
@@ -39,7 +41,7 @@ export default function CallLogs() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/calls`);
+        const response = await fetch(`${BACKEND_URL}/api/calls`);
         if (!response.ok) {
           throw new Error('Failed to fetch call logs');
         }
