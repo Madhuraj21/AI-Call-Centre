@@ -1,0 +1,34 @@
+# Node.js / Next.js
+node_modules
+.next
+out
+
+# Python / Flask
+__pycache__/
+*.pyc
+*.log
+venv/
+.venv/
+
+# Environment variables
+.env
+.env.local
+
+# Database (if using file-based SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# OS and IDE specific files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Ngrok files
+*.ngrok.log
+ngrok.yml
+
+# Render/Vercel build output (redundant with .next/out but good practice)
+.vercel/
+.render/ 
