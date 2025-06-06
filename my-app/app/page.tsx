@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 // Update the import path if the file exists elsewhere, for example:
 import { ThemeProvider } from "./theme-provider"
 // Or, if you do not have a ThemeProvider, create one in the correct location.
@@ -36,6 +36,7 @@ import DashboardOverview from "@/components/dashboard-overview"
 import AgentManagement from "@/components/agent-management"
 import CallLogs from "@/components/call-logs"
 import CallRecordings from "@/components/call-recordings"
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const navigationItems = [
   {
@@ -62,8 +63,18 @@ const navigationItems = [
 
 function AppSidebar({
   activeSection,
-  setActiveSection,
-}: { activeSection: string; setActiveSection: (section: string) => void }) {
+}: { activeSection: string; /* setActiveSection: (section: string) => void */ }) {
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleNavigationClick = (sectionId: string) => {
+    // Update URL with the selected tab as a query parameter
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', sectionId);
+    router.push(`/?${params.toString()}`);
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -84,7 +95,10 @@ function AppSidebar({
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton onClick={() => setActiveSection(item.id)} isActive={activeSection === item.id}>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigationClick(item.id)}
+                    isActive={activeSection === item.id}
+                  >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
@@ -167,7 +181,20 @@ function TopNavbar() {
 }
 
 export default function Dashboard() {
-  const [activeSection, setActiveSection] = useState("dashboard")
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read activeSection from URL query parameter, default to 'dashboard'
+  const initialSection = searchParams.get('tab') || 'dashboard';
+  const [activeSection, setActiveSection] = useState(initialSection);
+
+  // Update activeSection state when the 'tab' query parameter changes
+  useEffect(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab && currentTab !== activeSection) {
+      setActiveSection(currentTab);
+    }
+  }, [searchParams, activeSection]); // Re-run effect when searchParams or activeSection changes
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -188,7 +215,7 @@ export default function Dashboard() {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-          <AppSidebar activeSection={activeSection} setActiveSection={setActiveSection} />
+          <AppSidebar activeSection={activeSection} />
           <SidebarInset className="flex flex-1 flex-col">
             <TopNavbar />
             <main className="flex-1 space-y-4 p-4 md:p-6 lg:p-8">{renderActiveSection()}</main>
