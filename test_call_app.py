@@ -336,9 +336,8 @@ def get_agents():
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
         agents = cursor.fetchall()
-        # Convert to list of dicts and ensure consistent response format
-        # Using DictCursor means rows are already dict-like, no need for dict() conversion
-        agents_list = [agent for agent in agents]
+        # Convert to list of standard Python dictionaries
+        agents_list = [dict(agent) for agent in agents]
         return {"data": agents_list}
     except Exception as e:
         # Use logger for better visibility on Render
