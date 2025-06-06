@@ -406,13 +406,14 @@ def request_call():
         return jsonify({"error": f"Error initiating call: {e}"}), 500
 
 @app.route('/api/calls', methods=['GET'])
+@json_response
 def get_calls():
     """Return all call logs."""
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute("SELECT * FROM calls ORDER BY start_time DESC")
     calls = cursor.fetchall()
-    return jsonify([dict(call) for call in calls]), 200
+    return [dict(call) for call in calls]
 
 @app.route('/api/metrics/daily_calls', methods=['GET'])
 @json_response
