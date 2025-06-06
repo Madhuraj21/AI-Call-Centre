@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight } from "lucide-react"
 
 // Define CallLog type based on backend response
 interface CallLog {
@@ -26,8 +26,6 @@ export default function CallLogs() {
   const [callLogs, setCallLogs] = useState<CallLog[]>([]) // Initialize with empty array
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortField, setSortField] = useState<string | null>("start_time") // Default sort by timestamp
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc") // Default sort descending
   const [totalCalls, setTotalCalls] = useState(0); // State for total number of calls
   const [loading, setLoading] = useState(true); // Add loading state
   const [error, setError] = useState<string | null>(null); // Add error state
@@ -71,7 +69,7 @@ export default function CallLogs() {
   // Calculate total pages based on totalCalls and itemsPerPage
   const totalPages = Math.ceil(totalCalls / itemsPerPage);
 
-  // Filter and paginate logs
+  // Filter logs
   const filteredLogs = callLogs.filter((log) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -81,46 +79,13 @@ export default function CallLogs() {
     );
   });
 
-  // Sort logs
-  const sortedLogs = [...filteredLogs].sort((a, b) => {
-    if (!sortField) return 0;
-    
-    const aValue = a[sortField as keyof CallLog];
-    const bValue = b[sortField as keyof CallLog];
-    
-    if (aValue === null || bValue === null) return 0;
-    
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc' 
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    }
-    
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortDirection === 'asc' 
-        ? aValue - bValue
-        : bValue - aValue;
-    }
-    
-    return 0;
-  });
-
-  // Paginate the sorted and filtered logs
+  // Paginate the filtered logs (use filteredLogs directly as sorting is removed)
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedLogs = sortedLogs.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
 
   // Calculate the range of items being displayed
   const startItem = startIndex + 1;
   const endItem = Math.min(startIndex + itemsPerPage, totalCalls);
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-    } else {
-      setSortField(field)
-      setSortDirection("desc") // Default to descending when changing sort field
-    }
-  }
 
   const getStatusBadge = (status: string) => {
     const variants = {

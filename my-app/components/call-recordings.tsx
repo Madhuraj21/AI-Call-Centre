@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Play, Download, Pause, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Play, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
@@ -113,9 +112,7 @@ export default function CallRecordings() {
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [selectedRecording, setSelectedRecording] = useState<typeof mockRecordings[0] | null>(null)
   const [filterStatus, setFilterStatus] = useState("all")
-  const [loading, setLoading] = useState(false); // Add loading state
-  const [error, setError] = useState<string | null>(null); // Add error state
-  const [totalRecordings, setTotalRecordings] = useState(mockRecordings.length); // Add and initialize totalRecordings state
+  const totalRecordings = mockRecordings.length; // Use a constant since it's based on mock data
 
   const itemsPerPage = 6
 
@@ -127,13 +124,13 @@ export default function CallRecordings() {
   )
 
   // Paginate results
-  const totalPages = Math.ceil(totalRecordings / itemsPerPage); // Use totalRecordings here
+  const totalPages = Math.ceil(totalRecordings / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedRecordings = filteredRecordings.slice(startIndex, startIndex + itemsPerPage)
 
   // Calculate the range of items being displayed
   const startItem = startIndex + 1;
-  const endItem = Math.min(startIndex + itemsPerPage, totalRecordings); // Use totalRecordings here
+  const endItem = Math.min(startIndex + itemsPerPage, totalRecordings);
 
   const handlePlay = (recordingId: number) => {
     if (playingId === recordingId) {
@@ -257,7 +254,7 @@ export default function CallRecordings() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Duration:</span>
-                      <span className="font-mono">{recording.duration}</span>
+                      <span className="font-mono">{formatDuration(parseFloat(recording.duration.split(':')[0])*3600 + parseFloat(recording.duration.split(':')[1])*60 + parseFloat(recording.duration.split(':')[2]))}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Date:</span>
@@ -293,19 +290,9 @@ export default function CallRecordings() {
             ))}
           </div>
 
-          {paginatedRecordings.length === 0 && !loading && (
+          {filteredRecordings.length === 0 && (
             <div className="text-center py-8 w-full">
               <p className="text-muted-foreground">No recordings found matching your criteria.</p>
-            </div>
-          )}
-          {loading && (
-            <div className="text-center py-8 w-full">
-              <p className="text-muted-foreground">Loading recordings...</p>
-            </div>
-          )}
-          {error && (
-            <div className="text-center py-8 text-red-500 w-full">
-              <p>Error: {error}</p>
             </div>
           )}
 
@@ -325,7 +312,7 @@ export default function CallRecordings() {
                 Previous
               </Button>
               <div className="flex items-center space-x-1">
-                {totalPages <= 20 ? (Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                {totalPages > 1 && Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <Button
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
@@ -335,7 +322,8 @@ export default function CallRecordings() {
                   >
                     {page}
                   </Button>
-                ))) : (
+                ))}
+                {totalPages <= 1 && (
                   <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
                 )}
               </div>
@@ -343,7 +331,7 @@ export default function CallRecordings() {
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages <= 1}
               >
                 Next
                 <ChevronRight className="h-4 w-4" />

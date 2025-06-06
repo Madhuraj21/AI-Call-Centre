@@ -239,16 +239,16 @@ def request_call():
     if not to_phone_number:
         return jsonify({"error": "Phone number is required"}), 400
     TWILIO_PHONE_NUMBER = "+19787836427" # Your Twilio US number
-    # TODO: Replace with your deployed backend URL on Render (e.g., https://your-app-name.onrender.com)
-    DEPLOYED_BACKEND_URL = "https://your-deployed-backend-url.render.com"
+    # Replace with your deployed backend URL on Render (e.g., https://your-app-name.onrender.com)
+    DEPLOYED_BACKEND_URL = "https://ai-call-centre-backend.onrender.com"
 
     try:
         call = client.calls.create(
             to=to_phone_number,
             from_=TWILIO_PHONE_NUMBER,
-            # TODO: Replace with your deployed backend URL + /voice endpoint
+            # Replace with your deployed backend URL + /voice endpoint
             url=f"{DEPLOYED_BACKEND_URL}/voice",
-            # TODO: Replace with your deployed backend URL + /twilio_status_callback endpoint
+            # Replace with your deployed backend URL + /twilio_status_callback endpoint
             status_callback=f"{DEPLOYED_BACKEND_URL}/twilio_status_callback",
             status_callback_event=['initiated', 'ringing', 'answered', 'completed', 'failed', 'no-answer', 'busy', 'canceled']
         )

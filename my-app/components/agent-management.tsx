@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -57,13 +56,10 @@ export default function AgentManagement() {
     fetchAgents();
   }, []);
 
-  // Filter agents based on search and status
-  const filteredAgents = agents.filter((agent) => {
-    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         agent.phone_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || agent.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  // Filter agents based on search term
+  const filteredAgents = agents.filter((agent) =>
+    agent.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   // Toggle agent availability
   const toggleAgentStatus = async (agentId: number, currentStatus: Agent['status']) => {
@@ -87,9 +83,9 @@ export default function AgentManagement() {
           agent.id === agentId ? { ...agent, ...updatedAgent } : agent
         )
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating agent status:", error);
-      setError(error.message);
+      setError(error instanceof Error ? error.message : "Failed to update agent status");
     }
   };
 
