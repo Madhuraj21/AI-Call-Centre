@@ -89,11 +89,27 @@ export default function DashboardOverview() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/metrics`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch metrics');
+        // Make separate fetch calls to each specific metrics endpoint
+        const [dailyCallsResponse, avgDurationResponse, agentAvailabilityResponse] = await Promise.all([
+          fetch(`${BACKEND_URL}/api/metrics/daily_calls`),
+          fetch(`${BACKEND_URL}/api/metrics/avg_call_duration`),
+          fetch(`${BACKEND_URL}/api/metrics/agent_availability`),
+        ]);
+
+        if (!dailyCallsResponse.ok || !avgDurationResponse.ok || !agentAvailabilityResponse.ok) {
+          throw new Error('Failed to fetch one or more metrics');
         }
-        const data: MetricsData = await response.json();
+
+        const dailyCallsData = await dailyCallsResponse.json();
+        const avgDurationData = await avgDurationResponse.json();
+        const agentAvailabilityData = await agentAvailabilityResponse.json();
+
+        // Combine the fetched data into the expected structure
+        const data: MetricsData = {
+          dailyCalls: dailyCallsData,
+          avgDuration: avgDurationData,
+          agentAvailability: agentAvailabilityData,
+        };
 
         // Update KPIs with real data
         setKpis([
