@@ -57,9 +57,14 @@ export default function AgentManagement() {
   }, []);
 
   // Filter agents based on search term
-  const filteredAgents = agents.filter((agent) =>
-    agent.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const filteredAgents = agents.filter((agent) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (agent.name?.toLowerCase() || '').includes(searchLower) || // Safely access name
+      (agent.phone_number?.toLowerCase() || '').includes(searchLower) || // Safely access phone_number
+      (agent.status?.toLowerCase() || '').includes(searchLower) // Safely access status
+    );
+  });
 
   // Toggle agent availability
   const toggleAgentStatus = async (agentId: number, currentStatus: Agent['status']) => {

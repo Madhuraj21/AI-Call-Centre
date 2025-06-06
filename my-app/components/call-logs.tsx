@@ -75,9 +75,9 @@ export default function CallLogs() {
   const filteredLogs = callLogs.filter((log) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      log.caller_number.toLowerCase().includes(searchLower) ||
+      (log.caller_number?.toLowerCase() || '').includes(searchLower) ||
       (log.agent_name?.toLowerCase() || '').includes(searchLower) ||
-      log.status.toLowerCase().includes(searchLower)
+      (log.status?.toLowerCase() || '').includes(searchLower)
     );
   });
 
