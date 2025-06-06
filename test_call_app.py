@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 import logging
 from dotenv import load_dotenv
+import psycopg2 # Import psycopg2
+import psycopg2.extras # Import psycopg2.extras for DictCursor
 
 # Load environment variables
 load_dotenv()
@@ -33,6 +35,137 @@ CORS(app, resources={
 })
 # Replace with a real secret key in production!
 app.secret_key = os.environ.get('SECRET_KEY', 'a_very_secret_key_for_dev')
+
+# Database configuration - Use DATABASE_URL environment variable for PostgreSQL
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    logger.error("DATABASE_URL environment variable is not set.")
+    # In a real app, you might want to raise an error or exit here
+    # For now, let's allow it to run, but db operations will fail.
+
+def get_db():
+    """Get database connection for PostgreSQL."""
+    if not DATABASE_URL:
+        logger.error("Cannot connect to database, DATABASE_URL is not set.")
+        return None # Or raise an exception
+        
+    if not hasattr(g, '_database'):
+        try:
+            # Connect to PostgreSQL using the URL
+            # Use DictCursor to fetch rows as dictionaries
+            g._database = psycopg2.connect(DATABASE_URL)
+        except Exception as e:
+            logger.error(f"Database connection error: {str(e)}")
+            # Store the error on g so we don't try to reconnect repeatedly
+            g._database_error = e
+            raise # Re-raise the exception after logging
+    
+    # If there was a connection error on a previous call within the same request context
+    if hasattr(g, '_database_error') and g._database_error is not None:
+         raise g._database_error # Re-raise the stored error
+         
+    return g._database
+
+def close_connection(exception=None):
+    """Close database connection for PostgreSQL."""
+    db = getattr(g, '_database', None)
+    if db is not None:
+        try:
+            db.close()
+            logger.info("Database connection closed.")
+        except Exception as e:
+            logger.error(f"Error closing database connection: {str(e)}")
+    # Clear any stored error on this context
+    if hasattr(g, '_database_error'):
+        del g._database_error
+
+# Register the close_connection function with the app teardown
+app.teardown_appcontext(close_connection)
+
+def init_db():
+    """Initialize PostgreSQL database tables if they don't exist."""
+    if not DATABASE_URL:
+        logger.error("Cannot initialize database, DATABASE_URL is not set.")
+        return
+        
+    try:
+        # Connect and create tables outside of request context
+        with app.app_context():
+            db = get_db()
+            if db is None: # Handle case where get_db returns None due to missing URL
+                 logger.error("Failed to get DB connection for initialization.")
+                 return
+                 
+            cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            
+            # Create agents table with PostgreSQL syntax (SERIAL for auto-increment)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS agents (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    phone_number VARCHAR(255) NOT NULL UNIQUE,
+                    status VARCHAR(50) NOT NULL DEFAULT 'offline',
+                    last_status_update TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            ''')
+            
+            # Create calls table with PostgreSQL syntax
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS calls (
+                    id SERIAL PRIMARY KEY,
+                    call_sid VARCHAR(255) UNIQUE,
+                    caller_number VARCHAR(255) NOT NULL,
+                    agent_id INTEGER REFERENCES agents(id),
+                    start_time TIMESTAMP WITH TIME ZONE,
+                    end_time TIMESTAMP WITH TIME ZONE,
+                    duration INTEGER, -- in seconds
+                    status VARCHAR(50),
+                    recording_url VARCHAR(255),
+                    ai_interaction_summary TEXT
+                );
+            ''')
+            
+            db.commit()
+            logger.info("PostgreSQL database tables checked/created.")
+            
+            # Add mock agents only if the table is empty
+            cursor.execute("SELECT COUNT(*) FROM agents;")
+            count = cursor.fetchone()[0]
+            if count == 0:
+                mock_agents = [
+                    ("Sarah Johnson", "+919325484855", "available"),
+                    ("Mike Chen", "+15552345678", "offline"),
+                    ("Emily Rodriguez", "+15553456789", "available"),
+                    ("David Kim", "+15554567890", "offline"),
+                ]
+                # Use executemany with a list of tuples
+                cursor.executemany(
+                    "INSERT INTO agents (name, phone_number, status) VALUES (%s, %s, %s);",
+                    mock_agents
+                )
+                db.commit()
+                logger.info("PostgreSQL database initialized with mock agents.")
+            else:
+                logger.info("PostgreSQL agents table already contains data.")
+                
+    except Exception as e:
+        logger.error(f"PostgreSQL database initialization error: {str(e)}")
+        # Depending on severity, you might want to exit the app here
+        # import sys
+        # sys.exit(1)
+        # For now, we log and let the app try to run (though db operations will fail)
+
+# Add error handler for PostgreSQL errors
+@app.errorhandler(psycopg2.Error)
+def handle_db_error(error):
+    logger.error(f"PostgreSQL database error: {str(error)}")
+    # Ensure connection is closed in case of error during request
+    close_connection()
+    return jsonify({
+        "error": "Database error occurred",
+        "details": str(error)
+    }), 500
 
 # Add error handler for JSON responses
 @app.errorhandler(Exception)
@@ -122,22 +255,22 @@ def gather_age():
         # Update call record with collected AI interaction summary
         if call_sid:
             ai_summary = f"Name: {name}, Age: {age}"
-            cursor.execute("UPDATE calls SET ai_interaction_summary = ? WHERE call_sid = ?", (ai_summary, call_sid))
+            cursor.execute("UPDATE calls SET ai_interaction_summary = %s WHERE call_sid = %s", (ai_summary, call_sid))
             db.commit()
             print(f"Updated call {call_sid} with AI summary.")
 
 
-        cursor.execute("SELECT id, phone_number FROM agents WHERE status = 'available' LIMIT 1")
+        cursor.execute("SELECT id, phone_number FROM agents WHERE status = %s LIMIT 1", ('available',))
         agent = cursor.fetchone()
 
         if agent:
             agent_id = agent['id']
             agent_phone_number = agent['phone_number']
             # Update agent status to 'on_call'
-            cursor.execute("UPDATE agents SET status = 'on_call', last_status_update = CURRENT_TIMESTAMP WHERE id = ?", (agent_id,))
+            cursor.execute("UPDATE agents SET status = %s, last_status_update = CURRENT_TIMESTAMP WHERE id = %s", ('on_call', agent_id))
             # Link call record to agent
             if call_sid:
-                 cursor.execute("UPDATE calls SET agent_id = ?, status = ? WHERE call_sid = ?", (agent_id, 'transferred', call_sid))
+                 cursor.execute("UPDATE calls SET agent_id = %s, status = %s WHERE call_sid = %s", (agent_id, 'transferred', call_sid))
                  db.commit()
                  print(f"Linked call {call_sid} to agent {agent_id} and updated status to transferred.")
 
@@ -226,7 +359,7 @@ def update_agent_status(agent_id):
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        'UPDATE agents SET status = ?, last_status_update = ? WHERE id = ?',
+        'UPDATE agents SET status = %s, last_status_update = %s WHERE id = %s',
         (status, datetime.now(), agent_id)
     )
     db.commit()
@@ -234,7 +367,7 @@ def update_agent_status(agent_id):
     if cursor.rowcount == 0:
         raise ValueError("Agent not found")
 
-    agent = db.execute('SELECT * FROM agents WHERE id = ?', (agent_id,)).fetchone()
+    agent = db.execute('SELECT * FROM agents WHERE id = %s', (agent_id,)).fetchone()
     return dict(agent)
 
 @app.route("/request_call", methods=['POST'])
@@ -260,7 +393,7 @@ def request_call():
         )
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("INSERT INTO calls (call_sid, caller_number, start_time, status) VALUES (?, ?, CURRENT_TIMESTAMP, ?)", (call.sid, to_phone_number, 'initiated'))
+        cursor.execute("INSERT INTO calls (call_sid, caller_number, start_time, status) VALUES (%s, %s, %s, %s)", (call.sid, to_phone_number, datetime.now(), 'initiated'))
         db.commit()
         print(f"Logged initiated call for {to_phone_number} with CallSid: {call.sid}")
         return jsonify({"message": f"Call initiated successfully! Call SID: {call.sid}"}), 200
@@ -291,7 +424,7 @@ def get_daily_calls():
     cursor.execute("""
         SELECT COUNT(*) as total
         FROM calls
-        WHERE DATE(start_time) = ?
+        WHERE DATE(start_time) = %s
     """, (today.isoformat(),))
     today_calls = cursor.fetchone()['total']
     
@@ -299,7 +432,7 @@ def get_daily_calls():
     cursor.execute("""
         SELECT COUNT(*) as total
         FROM calls
-        WHERE DATE(start_time) = ?
+        WHERE DATE(start_time) = %s
     """, (yesterday.isoformat(),))
     yesterday_calls = cursor.fetchone()['total']
     
@@ -324,7 +457,7 @@ def get_avg_call_duration():
         SELECT AVG(duration) as avg_duration
         FROM calls
         WHERE status = 'completed'
-        AND start_time >= datetime('now', '-1 day')
+        AND start_time >= CURRENT_TIMESTAMP - INTERVAL '1 day'
         AND duration IS NOT NULL
     """)
     result = cursor.fetchone()
@@ -335,8 +468,8 @@ def get_avg_call_duration():
         SELECT AVG(duration) as avg_duration
         FROM calls
         WHERE status = 'completed'
-        AND start_time >= datetime('now', '-2 days')
-        AND start_time < datetime('now', '-1 day')
+        AND start_time >= CURRENT_TIMESTAMP - INTERVAL '2 days'
+        AND start_time < CURRENT_TIMESTAMP - INTERVAL '1 day'
         AND duration IS NOT NULL
     """)
     result = cursor.fetchone()
@@ -382,65 +515,5 @@ def index():
     """Serve the request_callback.html file."""
     return send_from_directory('.', 'request_callback.html')
 
-DATABASE = 'call_center.db'
-
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row # This makes rows behave like dicts
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
-
-def init_db():
-    with app.app_context():
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS agents (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                phone_number TEXT NOT NULL UNIQUE,
-                status TEXT NOT NULL DEFAULT 'offline', -- available, on_call, offline
-                last_status_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        # Add the new calls table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS calls (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                call_sid TEXT UNIQUE, -- Store Twilio Call SID
-                caller_number TEXT NOT NULL,
-                agent_id INTEGER, -- FK to agents table
-                start_time TIMESTAMP,
-                end_time TIMESTAMP,
-                duration INTEGER, -- in seconds
-                status TEXT, -- initiated, ringing, answered, completed, no-answer, failed, busy, canceled
-                recording_url TEXT,
-                ai_interaction_summary TEXT, -- e.g., collected name/age
-                FOREIGN KEY (agent_id) REFERENCES agents(id)
-            )
-        ''')
-        # Add some mock agents if the agents table is empty
-        cursor.execute("SELECT COUNT(*) FROM agents")
-        if cursor.fetchone()[0] == 0:
-            mock_agents = [
-                ("Sarah Johnson", "+919325484855", "available"), # Updated to your Indian number for testing
-                ("Mike Chen", "+15552345678", "offline"),
-                ("Emily Rodriguez", "+15553456789", "available"),
-                ("David Kim", "+15554567890", "offline"),
-            ]
-            cursor.executemany("INSERT INTO agents (name, phone_number, status) VALUES (?, ?, ?)", mock_agents)
-            db.commit()
-            print("Database initialized and mock agents added.")
-        else:
-            print("Agents table already exists and contains data.")
-
 if __name__ == "__main__":
-    init_db() # Initialize database when app starts
     app.run(debug=True)

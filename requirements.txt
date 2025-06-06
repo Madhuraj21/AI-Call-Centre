@@ -2,4 +2,5 @@ Flask
 Twilio
 Flask-Cors
 python-dotenv
-gunicorn 
+gunicorn
+psycopg2-binary 
