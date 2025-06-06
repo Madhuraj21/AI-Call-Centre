@@ -1,0 +1,5 @@
+Flask
+Twilio
+Flask-Cors
+python-dotenv
+gunicorn 
