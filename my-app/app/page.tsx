@@ -37,6 +37,7 @@ import AgentManagement from "@/components/agent-management"
 import CallLogs from "@/components/call-logs"
 import CallRecordings from "@/components/call-recordings"
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const navigationItems = [
   {
@@ -180,7 +181,7 @@ function TopNavbar() {
   )
 }
 
-export default function Dashboard() {
+export function Dashboard() {
   const searchParams = useSearchParams();
 
   // Read activeSection from URL query parameter, default to 'dashboard'
@@ -223,4 +224,12 @@ export default function Dashboard() {
       </SidebarProvider>
     </ThemeProvider>
   )
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <Dashboard />
+    </Suspense>
+  );
 }
