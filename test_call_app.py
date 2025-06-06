@@ -341,7 +341,9 @@ def get_agents():
         agents_list = [agent for agent in agents]
         return {"data": agents_list}
     except Exception as e:
-        print(f"Error fetching agents: {e}")
+        # Use logger for better visibility on Render
+        logger.error(f"Error fetching agents: {e}")
+        # Re-raise the exception to trigger the app's error handler
         raise
 
 @app.route("/api/agents/<int:agent_id>/status", methods=['PUT'])
