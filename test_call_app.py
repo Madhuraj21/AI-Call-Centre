@@ -24,11 +24,7 @@ app = Flask(__name__)
 # Configure CORS to allow requests from the Next.js frontend
 CORS(app, resources={
     r"/*": {
-        "origins": [
-            "http://localhost:3000",
-            "https://ai-call-centre-jfa2fo5ek-madmaxs-projects-0d745f0d.vercel.app",
-            "https://ai-call-centre.vercel.app"  # Add your main Vercel domain if different
-        ],
+        "origins": "*", # Allow all origins temporarily
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
