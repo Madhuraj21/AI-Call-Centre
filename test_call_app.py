@@ -371,7 +371,8 @@ def update_agent_status(agent_id):
     # Fetch the updated agent using the DictCursor
     cursor.execute('SELECT id, name, phone_number, status, last_status_update FROM agents WHERE id = %s', (agent_id,))
     agent = cursor.fetchone()
-    return agent
+    # Explicitly return as a dictionary
+    return dict(agent)
 
 @app.route("/request_call", methods=['POST'])
 def request_call():
