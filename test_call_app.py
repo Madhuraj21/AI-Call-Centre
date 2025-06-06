@@ -152,6 +152,9 @@ def init_db():
         # sys.exit(1)
         # For now, we log and let the app try to run (though db operations will fail)
 
+# Initialize database when app starts (ensure this runs on import by Gunicorn)
+init_db()
+
 # Add error handler for PostgreSQL errors
 @app.errorhandler(psycopg2.Error)
 def handle_db_error(error):
