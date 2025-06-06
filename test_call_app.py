@@ -358,7 +358,7 @@ def update_agent_status(agent_id):
         raise ValueError("Invalid status provided")
 
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.execute(
         'UPDATE agents SET status = %s, last_status_update = %s WHERE id = %s',
         (status, datetime.now(), agent_id)
@@ -368,8 +368,10 @@ def update_agent_status(agent_id):
     if cursor.rowcount == 0:
         raise ValueError("Agent not found")
 
-    agent = db.execute('SELECT * FROM agents WHERE id = %s', (agent_id,)).fetchone()
-    return dict(agent)
+    # Fetch the updated agent using the DictCursor
+    cursor.execute('SELECT id, name, phone_number, status, last_status_update FROM agents WHERE id = %s', (agent_id,))
+    agent = cursor.fetchone()
+    return agent
 
 @app.route("/request_call", methods=['POST'])
 def request_call():
