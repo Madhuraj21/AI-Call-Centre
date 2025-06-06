@@ -36,7 +36,7 @@ import DashboardOverview from "@/components/dashboard-overview"
 import AgentManagement from "@/components/agent-management"
 import CallLogs from "@/components/call-logs"
 import CallRecordings from "@/components/call-recordings"
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 const navigationItems = [
   {
@@ -181,7 +181,6 @@ function TopNavbar() {
 }
 
 export default function Dashboard() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Read activeSection from URL query parameter, default to 'dashboard'
