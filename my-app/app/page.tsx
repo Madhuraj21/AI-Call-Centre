@@ -36,7 +36,7 @@ import DashboardOverview from "@/components/dashboard-overview"
 import AgentManagement from "@/components/agent-management"
 import CallLogs from "@/components/call-logs"
 import CallRecordings from "@/components/call-recordings"
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const navigationItems = [
   {
