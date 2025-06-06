@@ -106,7 +106,7 @@ const mockRecordings: CallRecording[] = [
 ]
 
 export default function CallRecordings() {
-  const [recordings, setRecordings] = useState(mockRecordings)
+  const [recordings] = useState<CallRecording[]>(mockRecordings)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [playingId, setPlayingId] = useState<number | null>(null)
@@ -158,10 +158,6 @@ export default function CallRecordings() {
     document.body.removeChild(link)
   }
 
-  const formatDateTime = (dateTime: string) => {
-    const date = new Date(dateTime)
-    return date.toLocaleString()
-  }
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -178,7 +174,6 @@ export default function CallRecordings() {
       busy: "destructive",
       canceled: "destructive",
     } as const;
-    // Assuming Badge component exists and is imported
     return <Badge variant={variants[status as keyof typeof variants] || "secondary"}>{status}</Badge>;
   };
 

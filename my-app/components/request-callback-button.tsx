@@ -70,7 +70,7 @@ export function RequestCallbackButton() {
           <DialogHeader>
             <DialogTitle>Request a Callback</DialogTitle>
             <DialogDescription>
-              Enter your phone number and we'll call you back shortly.
+              Enter your phone number and we&apos;ll call you back shortly.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleRequestCallback} className="space-y-4">

@@ -83,13 +83,9 @@ export default function DashboardOverview() {
     { name: "Offline", value: 0, color: "#ef4444" },
   ]);
   const [callData, setCallData] = useState<ChartData[]>([{ hour: "Now", calls: 0 }]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      setLoading(true);
-      setError(null);
       try {
         const response = await fetch('/api/metrics');
         if (!response.ok) {
@@ -145,9 +141,6 @@ export default function DashboardOverview() {
 
       } catch (error) {
         console.error("Error fetching metrics:", error);
-        setError(error instanceof Error ? error.message : "Failed to fetch metrics");
-      } finally {
-        setLoading(false);
       }
     };
 
