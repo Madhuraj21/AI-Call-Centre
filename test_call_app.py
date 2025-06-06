@@ -413,10 +413,12 @@ def get_calls():
     return jsonify([dict(call) for call in calls]), 200
 
 @app.route('/api/metrics/daily_calls', methods=['GET'])
+@json_response
 def get_daily_calls():
     """Return call statistics for today and yesterday."""
     db = get_db()
-    cursor = db.cursor()
+    # Ensure DictCursor is used
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     # Get today's date in UTC
     today = datetime.utcnow().date()
@@ -426,16 +428,16 @@ def get_daily_calls():
     cursor.execute("""
         SELECT COUNT(*) as total
         FROM calls
-        WHERE DATE(start_time) = %s
-    """, (today.isoformat(),))
+        WHERE start_time::DATE = %s
+    """, (today,))
     today_calls = cursor.fetchone()['total']
     
     # Get total calls for yesterday
     cursor.execute("""
         SELECT COUNT(*) as total
         FROM calls
-        WHERE DATE(start_time) = %s
-    """, (yesterday.isoformat(),))
+        WHERE start_time::DATE = %s
+    """, (yesterday,))
     yesterday_calls = cursor.fetchone()['total']
     
     # Calculate percentage change
@@ -443,55 +445,63 @@ def get_daily_calls():
     if yesterday_calls > 0:
         change = ((today_calls - yesterday_calls) / yesterday_calls) * 100
     
-    return jsonify({
+    return {
         'total': today_calls,
         'change': round(change, 1)
-    })
+    }
 
 @app.route('/api/metrics/avg_call_duration', methods=['GET'])
+@json_response
 def get_avg_call_duration():
     """Return average call duration for completed calls."""
     db = get_db()
-    cursor = db.cursor()
+    # Ensure DictCursor is used
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     # Get average duration for completed calls in the last 24 hours
+    # Use EXTRACT(EPOCH FROM ...) for duration in seconds in PostgreSQL
     cursor.execute("""
-        SELECT AVG(duration) as avg_duration
+        SELECT AVG(EXTRACT(EPOCH FROM (end_time - start_time))) as avg_duration
         FROM calls
         WHERE status = 'completed'
         AND start_time >= CURRENT_TIMESTAMP - INTERVAL '1 day'
-        AND duration IS NOT NULL
+        AND end_time IS NOT NULL -- Ensure end_time is not null for duration calculation
     """)
     result = cursor.fetchone()
-    avg_duration = result['avg_duration'] if result['avg_duration'] is not None else 0
+    # Handle None if no completed calls
+    avg_duration = result['avg_duration'] if result and result['avg_duration'] is not None else 0
     
     # Get average duration for completed calls in the previous 24 hours
+     # Use EXTRACT(EPOCH FROM ...) for duration in seconds in PostgreSQL
     cursor.execute("""
-        SELECT AVG(duration) as avg_duration
+        SELECT AVG(EXTRACT(EPOCH FROM (end_time - start_time))) as avg_duration
         FROM calls
         WHERE status = 'completed'
         AND start_time >= CURRENT_TIMESTAMP - INTERVAL '2 days'
         AND start_time < CURRENT_TIMESTAMP - INTERVAL '1 day'
-        AND duration IS NOT NULL
+        AND end_time IS NOT NULL -- Ensure end_time is not null for duration calculation
     """)
     result = cursor.fetchone()
-    prev_avg_duration = result['avg_duration'] if result['avg_duration'] is not None else 0
+    # Handle None if no completed calls in previous period
+    prev_avg_duration = result['avg_duration'] if result and result['avg_duration'] is not None else 0
     
     # Calculate percentage change
     change = 0
     if prev_avg_duration > 0:
         change = ((avg_duration - prev_avg_duration) / prev_avg_duration) * 100
     
-    return jsonify({
+    return {
         'seconds': round(avg_duration),
         'change': round(change, 1)
-    })
+    }
 
 @app.route('/api/metrics/agent_availability', methods=['GET'])
+@json_response
 def get_agent_availability():
     """Return current agent availability statistics."""
     db = get_db()
-    cursor = db.cursor()
+    # Ensure DictCursor is used
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     # Get total number of agents
     cursor.execute("SELECT COUNT(*) as total FROM agents")
@@ -505,12 +515,12 @@ def get_agent_availability():
     """)
     status_counts = {row['status']: row['count'] for row in cursor.fetchall()}
     
-    return jsonify({
+    return {
         'available': status_counts.get('available', 0),
         'on_call': status_counts.get('on_call', 0),
         'offline': status_counts.get('offline', 0),
         'total': total_agents
-    })
+    }
 
 @app.route("/")
 def index():
