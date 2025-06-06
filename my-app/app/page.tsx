@@ -181,7 +181,7 @@ function TopNavbar() {
   )
 }
 
-export function Dashboard() {
+function Dashboard() {
   const searchParams = useSearchParams();
 
   // Read activeSection from URL query parameter, default to 'dashboard'
