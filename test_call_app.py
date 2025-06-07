@@ -281,24 +281,20 @@ def get_token():
     try:
         # Generate a unique identity for the client
         identity = f"agent_{datetime.now().timestamp()}"
-
-    # Create an Access Token
+        # Create an Access Token
         token = AccessToken(
             TWILIO_ACCOUNT_SID,
             TWILIO_AUTH_TOKEN,
             identity=identity
         )
-        
-        # Create a Voice grant and add it to the token
-    voice_grant = VoiceGrant(
+        # Create a Voice grant and add it to the token (inside the try block)
+        voice_grant = VoiceGrant(
             outgoing_application_sid=TWILIO_ACCOUNT_SID,
-        incoming_allow=True
-    )
-    token.add_grant(voice_grant)
-
+            incoming_allow=True
+        )
+        token.add_grant(voice_grant)
         # Generate the token
         token_str = token.to_jwt()
-        
         logger.info(f"Successfully generated token for identity: {identity}")
         return {
             "token": token_str,
@@ -314,18 +310,15 @@ def get_token():
 def get_agents():
     """Retrieve a list of all agents."""
     try:
-    db = get_db()
-        cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
-    agents = cursor.fetchall()
-        # Convert to list of standard Python dictionaries
-        agents_list = [dict(agent) for agent in agents]
-        return {"data": agents_list}
+         db = get_db()
+         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+         cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
+         agents = cursor.fetchall()
+         agents_list = [dict(agent) for agent in agents]
+         return {"data": agents_list}
     except Exception as e:
-        # Use logger for better visibility on Render
-        logger.error(f"Error fetching agents: {e}")
-        # Re-raise the exception to trigger the app's error handler
-        raise
+         logger.error(f"Error fetching agents: {e}")
+         raise
 
 @app.route("/api/agents/<int:agent_id>/status", methods=['PUT'])
 @json_response
@@ -342,41 +335,40 @@ def update_agent_status(agent_id):
     if not status and not phone_number:
         raise ValueError("No status or phone number provided for update")
 
-    db = get_db()
-    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    try:
+        db = get_db()
+        cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        update_fields = []
+        update_values = []
+        if status:
+            if status not in ['available', 'on_call', 'offline', 'unavailable']:
+                raise ValueError("Invalid status provided")
+            update_fields.append("status = %s")
+            update_fields.append("last_status_update = CURRENT_TIMESTAMP")
+            update_values.append(status)
+        
+        if phone_number:
+            update_fields.append("phone_number = %s")
+            update_values.append(phone_number)
+        
+        if not update_fields:
+            raise ValueError("No valid fields to update")
 
-    # Build the update query dynamically
-    update_fields = []
-    update_values = []
+        query = f"UPDATE agents SET {', '.join(update_fields)} WHERE id = %s"
+        update_values.append(agent_id)
 
-    if status:
-        if status not in ['available', 'on_call', 'offline', 'unavailable']:
-            raise ValueError("Invalid status provided")
-        update_fields.append("status = %s")
-        update_fields.append("last_status_update = CURRENT_TIMESTAMP") # Update timestamp on status change
-        update_values.append(status)
-    
-    if phone_number:
-        update_fields.append("phone_number = %s")
-        update_values.append(phone_number)
-    
-    if not update_fields:
-        raise ValueError("No valid fields to update")
-
-    query = f"UPDATE agents SET {', '.join(update_fields)} WHERE id = %s"
-    update_values.append(agent_id)
-
-    cursor.execute(query, tuple(update_values))
+        cursor.execute(query, tuple(update_values))
         db.commit()
 
         if cursor.rowcount == 0:
-        raise ValueError("Agent not found")
+            raise ValueError("Agent not found")
 
-    # Fetch the updated agent using the DictCursor
-    cursor.execute('SELECT id, name, phone_number, status, last_status_update FROM agents WHERE id = %s', (agent_id,))
-    agent = cursor.fetchone()
-    # Explicitly return as a dictionary
-    return dict(agent)
+        cursor.execute('SELECT id, name, phone_number, status, last_status_update FROM agents WHERE id = %s', (agent_id,))
+        agent = cursor.fetchone()
+        return dict(agent)
+    except Exception as e:
+        logger.error(f"Error updating agent status: {e}")
+        raise
 
 @app.route("/request_call", methods=['POST'])
 def request_call():
