@@ -552,5 +552,17 @@ def index():
     """Serve the request_callback.html file."""
     return send_from_directory('.', 'request_callback.html')
 
+@app.route("/twilio_status_callback", methods=['POST'])
+def twilio_status_callback():
+    """
+    Receives call status updates from Twilio.
+    Twilio sends details about the call progress to this endpoint.
+    """
+    call_sid = request.form.get('CallSid')
+    call_status = request.form.get('CallStatus')
+    logger.info(f"Twilio Call Status Callback received for CallSID: {call_sid}, Status: {call_status}")
+    # Respond with a 204 No Content to acknowledge the callback
+    return "", 204
+
 if __name__ == "__main__":
     app.run(debug=True)
