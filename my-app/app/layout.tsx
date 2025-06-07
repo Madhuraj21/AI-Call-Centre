@@ -30,7 +30,7 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex h-screen">
               <Sidebar />
-              <main className="flex-1 overflow-y-auto">
+              <main className="flex-1">
                 <div className="container mx-auto px-4 py-8 max-w-[1600px]">
           {children}
                 </div>
