@@ -7,7 +7,8 @@ import CallRecordings from "@/components/call-recordings"
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-function Dashboard() {
+// Separate the content that uses useSearchParams into its own component
+function DashboardContent() {
   const searchParams = useSearchParams();
   const activeSection = searchParams.get('tab') || 'dashboard';
 
@@ -33,10 +34,15 @@ function Dashboard() {
   )
 }
 
-export default function Page() {
+// Main Dashboard component that wraps the content in Suspense
+function Dashboard() {
   return (
-    <Suspense>
-      <Dashboard />
+    <Suspense fallback={<div className="flex flex-col flex-1 items-center justify-center">Loading...</div>}>
+      <DashboardContent />
     </Suspense>
-  );
+  )
+}
+
+export default function Page() {
+  return <Dashboard />;
 }
