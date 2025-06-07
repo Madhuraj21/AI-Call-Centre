@@ -45,11 +45,6 @@ import CallRecordings from "@/components/call-recordings";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "AI Call Center Dashboard",
-  description: "Manage your AI-powered call center operations",
-};
-
 const navigationItems = [
   {
     title: "Dashboard Overview",
