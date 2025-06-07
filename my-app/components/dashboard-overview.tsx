@@ -178,7 +178,7 @@ export default function DashboardOverview() {
       {/* KPI Cards */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full">
         {kpis.map((kpi, index) => (
-          <Card key={index} className="w-full transition-all duration-200 hover:shadow-lg card-hover-effect">
+          <Card key={index} className="w-full transition-all duration-200 hover:shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
               <kpi.icon className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +208,7 @@ export default function DashboardOverview() {
       {/* Charts */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 w-full">
         {/* Calls per Hour Chart */}
-        <Card className="w-full transition-all duration-200 hover:shadow-lg flex flex-col card-hover-effect">
+        <Card className="w-full transition-all duration-200 hover:shadow-lg flex flex-col">
           <CardHeader>
             <CardTitle>Calls per Hour (Today)</CardTitle>
             <CardDescription>Real-time call volume throughout the day</CardDescription>
@@ -243,7 +243,7 @@ export default function DashboardOverview() {
         </Card>
 
         {/* Agent Availability Chart */}
-        <Card className="w-full transition-all duration-200 hover:shadow-lg flex flex-col h-full card-hover-effect">
+        <Card className="w-full transition-all duration-200 hover:shadow-lg flex flex-col h-full">
           <CardHeader className="pb-4">
             <CardTitle>Agent Availability</CardTitle>
             <CardDescription>Current status of all agents</CardDescription>
