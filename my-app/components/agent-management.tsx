@@ -112,7 +112,7 @@ export default function AgentManagement() {
         <p className="text-muted-foreground">Monitor and manage your call center agents</p>
       </div>
 
-      <Card className="w-full">
+      <Card className="w-full card-hover-effect">
         <CardHeader>
           <CardTitle>Agent Overview</CardTitle>
           <CardDescription>Manage agent availability and monitor performance</CardDescription>
