@@ -219,77 +219,59 @@ def voice():
 @app.route("/gather_name", methods=['POST'])
 def gather_name():
     """
-    Processes the collected name and asks for the user's age.
+    Processes the collected name (from Twilio's SpeechResult) and asks for the user's age.
+    (No longer uses session; caller_name and CallSid are passed via request.form.)
     """
     resp = VoiceResponse()
     if 'SpeechResult' in request.form:
-        name = request.form['SpeechResult']
-        # Store name and CallSid in session for later use
-        session['caller_name'] = name
-        session['call_sid'] = request.form.get('CallSid') # Store CallSid from Twilio request
-
+        caller_name = request.form['SpeechResult']
+        call_sid = request.form.get('CallSid')
         gather = resp.gather(input='speech', action='/gather_age', method='POST', speechTimeout='auto')
-        gather.say(f"Thank you, {name}. Now, please state your age.", voice='woman', language='en-US')
+        gather.say(f"Thank you, {caller_name}. Now, please state your age.", voice='woman', language='en-US')
     else:
         resp.say("I didn't catch your name. Please state your full name.", voice='woman', language='en-US')
-        resp.redirect('/voice') # Redirect back to ask for name again
+        resp.redirect('/voice')
     return str(resp)
 
 @app.route("/gather_age", methods=['POST'])
 def gather_age():
     """
-    Processes the collected age, confirms the information, and attempts to transfer to an available agent.
+    Processes the collected age (from Twilio's SpeechResult) and (if a CallSid is present) updates the call record (and transfers to an agent) using a DictCursor.
+    (No longer uses session; caller_name (from /gather_name) and CallSid are passed via request.form.)
     """
     resp = VoiceResponse()
-    name = session.get('caller_name', 'caller') # Get name from session
-    call_sid = session.get('call_sid') # Get CallSid from session
-
-    if 'SpeechResult' in request.form:
-        age = request.form['SpeechResult']
-        print(f"Collected Name: {name}, Age: {age}")
-
-        db = get_db()
-        cursor = db.cursor()
-
-        # Update call record with collected AI interaction summary
-        if call_sid:
-            ai_summary = f"Name: {name}, Age: {age}"
-            cursor.execute("UPDATE calls SET ai_interaction_summary = %s WHERE call_sid = %s", (ai_summary, call_sid))
-            db.commit()
-            print(f"Updated call {call_sid} with AI summary.")
-
-
-        cursor.execute("SELECT id, phone_number FROM agents WHERE status = %s LIMIT 1", ('available',))
-        agent = cursor.fetchone()
-
-        if agent:
-            agent_id = agent['id']
-            agent_phone_number = agent['phone_number']
-            # Update agent status to 'on_call'
-            cursor.execute("UPDATE agents SET status = %s, last_status_update = CURRENT_TIMESTAMP WHERE id = %s", ('on_call', agent_id))
-            # Link call record to agent
-            if call_sid:
-                 cursor.execute("UPDATE calls SET agent_id = %s, status = %s WHERE call_sid = %s", (agent_id, 'transferred', call_sid))
-                 db.commit()
-                 print(f"Linked call {call_sid} to agent {agent_id} and updated status to transferred.")
-
-
-            resp.say(f"Thank you, {name}. You stated your age as {age}. Please wait while I connect you to an available agent.", voice='woman', language='en-US')
-            resp.dial(agent_phone_number)
-            print(f"Attempting to connect to agent: {agent_phone_number}")
-        else:
-            resp.say("Thank you, {name}. You stated your age as {age}. Unfortunately, no agents are currently available. Please try again later.", voice='woman', language='en-US')
-            resp.hangup()
-            print("No agents available. Hanging up.")
-
-        # Clear session data after processing
-        session.pop('caller_name', None)
-        session.pop('call_sid', None)
-
+    age = request.form.get('SpeechResult')
+    call_sid = request.form.get('CallSid')
+    if not age:
+         resp.say("I didn't catch your age. Please state your age.", voice='woman', language='en-US')
+         resp.redirect('/gather_age')
+         return str(resp)
+    caller_name = request.form.get('caller_name', 'caller')
+    print(f"Collected Name: {caller_name}, Age: {age} (CallSid: {call_sid})")
+    db = get_db()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    if call_sid:
+         ai_summary = f"Name: {caller_name}, Age: {age}"
+         cursor.execute("UPDATE calls SET ai_interaction_summary = %s WHERE call_sid = %s", (ai_summary, call_sid))
+         db.commit()
+         print(f"Updated call {call_sid} with AI summary.")
+    cursor.execute("SELECT id, phone_number FROM agents WHERE status = %s LIMIT 1", ('available',))
+    agent = cursor.fetchone()
+    if agent:
+         agent_id = agent['id']
+         agent_phone_number = agent['phone_number']
+         cursor.execute("UPDATE agents SET status = %s, last_status_update = CURRENT_TIMESTAMP WHERE id = %s", ('on_call', agent_id))
+         if call_sid:
+              cursor.execute("UPDATE calls SET agent_id = %s, status = %s WHERE call_sid = %s", (agent_id, 'transferred', call_sid))
+              db.commit()
+              print(f"Linked call {call_sid} to agent {agent_id} and updated status to transferred.")
+         resp.say(f"Thank you, {caller_name}. You stated your age as {age}. Please wait while I connect you to an available agent.", voice='woman', language='en-US')
+         resp.dial(agent_phone_number)
+         print(f"Attempting to connect to agent: {agent_phone_number}")
     else:
-        resp.say("I didn't catch your age. Please state your age.", voice='woman', language='en-US')
-        # Redirect back to ask for age again, name is in session
-        resp.redirect('/gather_age')
+         resp.say(f"Thank you, {caller_name}. You stated your age as {age}. Unfortunately, no agents are currently available. Please try again later.", voice='woman', language='en-US')
+         resp.hangup()
+         print("No agents available. Hanging up.")
     return str(resp)
 
 @app.route("/token", methods=['GET'])
@@ -300,7 +282,7 @@ def get_token():
         # Generate a unique identity for the client
         identity = f"agent_{datetime.now().timestamp()}"
 
-        # Create an Access Token
+    # Create an Access Token
         token = AccessToken(
             TWILIO_ACCOUNT_SID,
             TWILIO_AUTH_TOKEN,
@@ -308,12 +290,12 @@ def get_token():
         )
         
         # Create a Voice grant and add it to the token
-        voice_grant = VoiceGrant(
+    voice_grant = VoiceGrant(
             outgoing_application_sid=TWILIO_ACCOUNT_SID,
-            incoming_allow=True
-        )
-        token.add_grant(voice_grant)
-        
+        incoming_allow=True
+    )
+    token.add_grant(voice_grant)
+
         # Generate the token
         token_str = token.to_jwt()
         
@@ -332,10 +314,10 @@ def get_token():
 def get_agents():
     """Retrieve a list of all agents."""
     try:
-        db = get_db()
+    db = get_db()
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
-        agents = cursor.fetchall()
+    cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
+    agents = cursor.fetchall()
         # Convert to list of standard Python dictionaries
         agents_list = [dict(agent) for agent in agents]
         return {"data": agents_list}
@@ -385,9 +367,9 @@ def update_agent_status(agent_id):
     update_values.append(agent_id)
 
     cursor.execute(query, tuple(update_values))
-    db.commit()
+        db.commit()
 
-    if cursor.rowcount == 0:
+        if cursor.rowcount == 0:
         raise ValueError("Agent not found")
 
     # Fetch the updated agent using the DictCursor
