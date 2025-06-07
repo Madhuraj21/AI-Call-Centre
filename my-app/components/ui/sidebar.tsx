@@ -292,16 +292,16 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 }
 
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+  const { state } = useSidebar();
+
   return (
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "bg-background relative flex w-full flex-1 flex-col",
-        // Default margin for expanded sidebar on md screens and up
-        "md:ml-[var(--sidebar-width)]",
-        // Adjust margin for collapsed sidebar on md screens and up
-        "md:peer-data-[state=collapsed]:ml-[var(--sidebar-width-icon)]",
-        // Keep other variant-specific styles if they are still desired
+        "bg-background relative flex flex-1 flex-col",
+        state === "expanded"
+          ? "md:ml-[var(--sidebar-width)] md:w-[calc(100vw-var(--sidebar-width))]"
+          : "md:ml-[var(--sidebar-width-icon)] md:w-[calc(100vw-var(--sidebar-width-icon))]",
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
         className
       )}
