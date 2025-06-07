@@ -1,14 +1,11 @@
 "use client"
 
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { RequestCallbackButton } from "@/components/request-callback-button";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { TopNavbar } from "@/components/top-navbar";
-import { AppSidebar } from "@/components/app-sidebar";
 import {
   Sidebar as BaseSidebar,
   SidebarContent,
@@ -37,11 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Moon, Sun, BarChart3, Users, Phone, Mic, Settings, Bell, User } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from "react";
-import DashboardOverview from "@/components/dashboard-overview";
-import AgentManagement from "@/components/agent-management";
-import CallLogs from "@/components/call-logs";
-import CallRecordings from "@/components/call-recordings";
+import { useState, useEffect } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
