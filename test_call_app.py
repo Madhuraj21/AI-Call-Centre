@@ -297,10 +297,9 @@ def gather_age():
 def get_token():
     """Generate a Twilio Access Token for the client."""
     try:
-        # Generate a unique identity for the client
         identity = f"agent_{datetime.now().timestamp()}"
 
-    # Create an Access Token
+        # Create an Access Token
         token = AccessToken(
             TWILIO_ACCOUNT_SID,
             TWILIO_AUTH_TOKEN,
@@ -308,11 +307,11 @@ def get_token():
         )
         
         # Create a Voice grant and add it to the token
-    voice_grant = VoiceGrant(
+        voice_grant = VoiceGrant(
             outgoing_application_sid=TWILIO_ACCOUNT_SID,
-        incoming_allow=True
-    )
-    token.add_grant(voice_grant)
+            incoming_allow=True
+        )
+        token.add_grant(voice_grant)
 
         # Generate the token
         token_str = token.to_jwt()
