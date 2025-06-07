@@ -28,6 +28,7 @@ export default function AgentManagement() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingAgentId, setEditingAgentId] = useState<number | null>(null);
 
   // Fetch agents from backend
   useEffect(() => {
@@ -91,6 +92,44 @@ export default function AgentManagement() {
     } catch (error: unknown) {
       console.error("Error updating agent status:", error);
       setError(error instanceof Error ? error.message : "Failed to update agent status");
+    }
+  };
+
+  // Handle phone number change in input field
+  const handlePhoneNumberChange = (agentId: number, newNumber: string) => {
+    setAgents((prevAgents) =>
+      prevAgents.map((agent) =>
+        agent.id === agentId ? { ...agent, phone_number: newNumber } : agent
+      )
+    );
+  };
+
+  // Handle completion of phone number edit
+  const handleEditComplete = async (agentId: number, newNumber: string) => {
+    setEditingAgentId(null); // Exit editing mode
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/agents/${agentId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone_number: newNumber }), // Send only phone_number
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update phone number');
+      }
+
+      const updatedAgent = await response.json();
+      setAgents((prevAgents) =>
+        prevAgents.map((agent) =>
+          agent.id === agentId ? { ...agent, ...updatedAgent } : agent
+        )
+      );
+    } catch (error: unknown) {
+      console.error("Error updating phone number:", error);
+      setError(error instanceof Error ? error.message : "Failed to update phone number");
+      // Optionally, revert the number in UI if update fails
     }
   };
 
@@ -158,7 +197,25 @@ export default function AgentManagement() {
                 {filteredAgents.map((agent) => (
                   <TableRow key={agent.id}>
                     <TableCell className="font-medium w-[25%] min-w-[150px]">{agent.name}</TableCell>
-                    <TableCell className="text-muted-foreground w-[35%] min-w-[200px]">{agent.phone_number}</TableCell>
+                    <TableCell className="text-muted-foreground w-[35%] min-w-[200px]">
+                      {editingAgentId === agent.id ? (
+                        <Input
+                          value={agent.phone_number}
+                          onChange={(e) => handlePhoneNumberChange(agent.id, e.target.value)}
+                          onBlur={() => handleEditComplete(agent.id, agent.phone_number)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.currentTarget.blur(); // Trigger onBlur to save
+                            }
+                          }}
+                          className="h-8"
+                        />
+                      ) : (
+                        <span onClick={() => setEditingAgentId(agent.id)} className="cursor-pointer hover:underline">
+                          {agent.phone_number}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell className="w-[20%] min-w-[100px]">{getStatusBadge(agent.status)}</TableCell>
                     <TableCell className="text-right w-[20%] min-w-[100px]">
                       <Switch

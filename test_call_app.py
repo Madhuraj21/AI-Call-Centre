@@ -354,15 +354,37 @@ def update_agent_status(agent_id):
         raise ValueError("No JSON data provided")
         
     status = data.get('status')
-    if not status or status not in ['available', 'on_call', 'unavailable', 'offline']:
-        raise ValueError("Invalid status provided")
+    # New: Allow updating phone_number
+    phone_number = data.get('phone_number')
+
+    if not status and not phone_number:
+        raise ValueError("No status or phone number provided for update")
 
     db = get_db()
     cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute(
-        'UPDATE agents SET status = %s, last_status_update = %s WHERE id = %s',
-        (status, datetime.now(), agent_id)
-    )
+
+    # Build the update query dynamically
+    update_fields = []
+    update_values = []
+
+    if status:
+        if status not in ['available', 'on_call', 'offline', 'unavailable']:
+            raise ValueError("Invalid status provided")
+        update_fields.append("status = %s")
+        update_fields.append("last_status_update = CURRENT_TIMESTAMP") # Update timestamp on status change
+        update_values.append(status)
+    
+    if phone_number:
+        update_fields.append("phone_number = %s")
+        update_values.append(phone_number)
+    
+    if not update_fields:
+        raise ValueError("No valid fields to update")
+
+    query = f"UPDATE agents SET {', '.join(update_fields)} WHERE id = %s"
+    update_values.append(agent_id)
+
+    cursor.execute(query, tuple(update_values))
     db.commit()
 
     if cursor.rowcount == 0:
