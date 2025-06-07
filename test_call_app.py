@@ -363,9 +363,9 @@ def update_agent_status(agent_id):
         'UPDATE agents SET status = %s, last_status_update = %s WHERE id = %s',
         (status, datetime.now(), agent_id)
     )
-        db.commit()
+    db.commit()
 
-        if cursor.rowcount == 0:
+    if cursor.rowcount == 0:
         raise ValueError("Agent not found")
 
     # Fetch the updated agent using the DictCursor
