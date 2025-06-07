@@ -106,7 +106,7 @@ export default function AgentManagement() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 p-4 md:p-6 lg:p-8">
       <div className="w-full">
         <h2 className="text-3xl font-bold tracking-tight">Agent Management</h2>
         <p className="text-muted-foreground">Monitor and manage your call center agents</p>

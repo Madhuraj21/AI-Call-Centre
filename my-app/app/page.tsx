@@ -218,7 +218,7 @@ function Dashboard() {
           <AppSidebar activeSection={activeSection} />
           <SidebarInset className="flex flex-1 flex-col">
             <TopNavbar />
-            <main className="flex-1 space-y-4 p-4 md:p-6 lg:p-8">{renderActiveSection()}</main>
+            <main className="flex-1 overflow-y-auto">{renderActiveSection()}</main>
           </SidebarInset>
         </div>
       </SidebarProvider>
