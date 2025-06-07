@@ -106,7 +106,7 @@ export default function AgentManagement() {
   };
 
   return (
-    <div className="w-full space-y-8 p-4 md:p-6 lg:p-8">
+    <div className="w-full space-y-8">
       <div className="w-full">
         <h2 className="text-3xl font-bold tracking-tight">Agent Management</h2>
         <p className="text-muted-foreground">Monitor and manage your call center agents</p>
@@ -148,19 +148,19 @@ export default function AgentManagement() {
             <Table className="w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[25%] min-w-[150px]">Name</TableHead>
-                  <TableHead className="w-[35%] min-w-[200px]">Phone Number</TableHead>
-                  <TableHead className="w-[20%] min-w-[100px]">Status</TableHead>
-                  <TableHead className="text-right w-[20%] min-w-[100px]">Availability</TableHead>
+                  <TableHead className="w-[25%] min-w-[120px]">Name</TableHead>
+                  <TableHead className="w-[35%] min-w-[150px]">Phone Number</TableHead>
+                  <TableHead className="w-[20%] min-w-[80px]">Status</TableHead>
+                  <TableHead className="text-right w-[20%] min-w-[80px]">Availability</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAgents.map((agent) => (
                   <TableRow key={agent.id}>
-                    <TableCell className="font-medium w-[25%] min-w-[150px]">{agent.name}</TableCell>
-                    <TableCell className="text-muted-foreground w-[35%] min-w-[200px]">{agent.phone_number}</TableCell>
-                    <TableCell className="w-[20%] min-w-[100px]">{getStatusBadge(agent.status)}</TableCell>
-                    <TableCell className="text-right w-[20%] min-w-[100px]">
+                    <TableCell className="font-medium w-[25%] min-w-[120px]">{agent.name}</TableCell>
+                    <TableCell className="text-muted-foreground w-[35%] min-w-[150px]">{agent.phone_number}</TableCell>
+                    <TableCell className="w-[20%] min-w-[80px]">{getStatusBadge(agent.status)}</TableCell>
+                    <TableCell className="text-right w-[20%] min-w-[80px]">
                       <Switch
                         checked={agent.status === 'available'}
                         onCheckedChange={() => toggleAgentStatus(agent.id, agent.status)}

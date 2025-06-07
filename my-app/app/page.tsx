@@ -183,18 +183,7 @@ function TopNavbar() {
 
 function Dashboard() {
   const searchParams = useSearchParams();
-
-  // Read activeSection from URL query parameter, default to 'dashboard'
-  const initialSection = searchParams.get('tab') || 'dashboard';
-  const [activeSection, setActiveSection] = useState(initialSection);
-
-  // Update activeSection state when the 'tab' query parameter changes
-  useEffect(() => {
-    const currentTab = searchParams.get('tab');
-    if (currentTab && currentTab !== activeSection) {
-      setActiveSection(currentTab);
-    }
-  }, [searchParams, activeSection]); // Re-run effect when searchParams or activeSection changes
+  const activeSection = searchParams.get('tab') || 'dashboard';
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -212,17 +201,9 @@ function Dashboard() {
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar activeSection={activeSection} />
-          <SidebarInset className="flex flex-1 flex-col">
-            <TopNavbar />
-            <main className="flex-1 overflow-y-auto">{renderActiveSection()}</main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </ThemeProvider>
+    <div className="flex flex-col flex-1">
+      {renderActiveSection()}
+    </div>
   )
 }
 

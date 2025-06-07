@@ -123,7 +123,7 @@ export default function CallLogs() {
   }
 
   return (
-    <div className="w-full space-y-8 p-4 md:p-6 lg:p-8">
+    <div className="w-full space-y-8">
       <div className="w-full">
         <h2 className="text-3xl font-bold tracking-tight">Call Logs</h2>
         <p className="text-muted-foreground">View and search through recent call history</p>
@@ -153,21 +153,21 @@ export default function CallLogs() {
             <Table className="w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[15%] min-w-[150px]">Caller Number</TableHead>
-                  <TableHead className="w-[20%] min-w-[200px]">Agent Assigned</TableHead>
-                  <TableHead className="w-[10%] min-w-[100px]">Duration</TableHead>
-                  <TableHead className="w-[15%] min-w-[100px]">Status</TableHead>
-                  <TableHead className="w-[40%] min-w-[200px]">Timestamp</TableHead>
+                  <TableHead className="w-[15%]">Caller Number</TableHead>
+                  <TableHead className="w-[20%]">Agent Assigned</TableHead>
+                  <TableHead className="w-[10%]">Duration</TableHead>
+                  <TableHead className="w-[15%]">Status</TableHead>
+                  <TableHead className="w-[40%]">Timestamp</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedLogs.map((log: CallLog) => (
                   <TableRow key={log.id} className="transition-colors hover:bg-muted/50">
-                    <TableCell className="font-medium w-[15%] min-w-[150px]">{log.caller_number}</TableCell>
-                    <TableCell className="w-[20%] min-w-[200px]">{log.agent_name}</TableCell>
-                    <TableCell className="font-mono text-sm w-[10%] min-w-[100px]">{formatDuration(log.duration)}</TableCell>
-                    <TableCell className="w-[15%] min-w-[100px]">{getStatusBadge(log.status)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground w-[40%] min-w-[200px]">{formatTimestamp(log.start_time)}</TableCell>
+                    <TableCell className="font-medium w-[15%]">{log.caller_number}</TableCell>
+                    <TableCell className="w-[20%]">{log.agent_name}</TableCell>
+                    <TableCell className="font-mono text-sm w-[10%]">{formatDuration(log.duration)}</TableCell>
+                    <TableCell className="w-[15%]">{getStatusBadge(log.status)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground w-[40%]">{formatTimestamp(log.start_time)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
