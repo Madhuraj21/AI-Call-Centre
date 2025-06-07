@@ -297,9 +297,10 @@ def gather_age():
 def get_token():
     """Generate a Twilio Access Token for the client."""
     try:
+        # Generate a unique identity for the client
         identity = f"agent_{datetime.now().timestamp()}"
 
-        # Create an Access Token
+    # Create an Access Token
         token = AccessToken(
             TWILIO_ACCOUNT_SID,
             TWILIO_AUTH_TOKEN,
@@ -307,11 +308,11 @@ def get_token():
         )
         
         # Create a Voice grant and add it to the token
-        voice_grant = VoiceGrant(
+    voice_grant = VoiceGrant(
             outgoing_application_sid=TWILIO_ACCOUNT_SID,
-            incoming_allow=True
-        )
-        token.add_grant(voice_grant)
+        incoming_allow=True
+    )
+    token.add_grant(voice_grant)
 
         # Generate the token
         token_str = token.to_jwt()
@@ -326,14 +327,15 @@ def get_token():
         logger.error(f"Error generating token: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route("/api/agents", methods=['GET'])
 @json_response
 def get_agents():
     """Retrieve a list of all agents."""
     try:
-        db = get_db()
+    db = get_db()
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
-        agents = cursor.fetchall()
+    cursor.execute("SELECT id, name, phone_number, status, last_status_update FROM agents")
+    agents = cursor.fetchall()
         # Convert to list of standard Python dictionaries
         agents_list = [dict(agent) for agent in agents]
         return {"data": agents_list}
@@ -361,9 +363,9 @@ def update_agent_status(agent_id):
         'UPDATE agents SET status = %s, last_status_update = %s WHERE id = %s',
         (status, datetime.now(), agent_id)
     )
-    db.commit()
+        db.commit()
 
-    if cursor.rowcount == 0:
+        if cursor.rowcount == 0:
         raise ValueError("Agent not found")
 
     # Fetch the updated agent using the DictCursor
