@@ -262,27 +262,27 @@ export default function CallRecordings() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between pt-2">
-                  <Button
+                        <Button
                     variant="outline"
-                    size="sm"
+                          size="sm"
                     onClick={() => handlePlayRecording(recording)}
                     disabled={!recording.recordingUrl}
-                  >
+                        >
                     <Play className="h-4 w-4 mr-2" />
                     Play
-                  </Button>
-                  <Button
+                        </Button>
+                        <Button
                     variant="outline"
-                    size="sm"
+                          size="sm"
                     onClick={() => handleDownloadRecording(recording)}
                     disabled={!recording.recordingUrl}
-                  >
+                        >
                     <Download className="h-4 w-4 mr-2" />
                     Download
-                  </Button>
+                        </Button>
                 </CardFooter>
               </Card>
-            ))}
+                ))}
           </div>
 
           {filteredRecordings.length === 0 && (
